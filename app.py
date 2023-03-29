@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify, send_file
+from flask_cors import CORS
 import datetime
 from psycopg2 import connect, extras
 from cryptography.fernet import Fernet
@@ -7,6 +8,7 @@ from os import environ
 
 load_dotenv()
 app = Flask(__name__)
+CORS(app)
 key = Fernet.generate_key()  # Encrypt password
 
 host = environ.get('DB_HOST')
@@ -30,7 +32,7 @@ def get_demands():
     connection = get_connection()
     cursor = connection.cursor(
         cursor_factory=extras.RealDictCursor)  # Make it objects
-    cursor.execute('SELECT * from demands')
+    cursor.execute('SELECT * from demands ORDER BY id ASC')
     demands = cursor.fetchall()
 
     cursor.close()
@@ -69,22 +71,25 @@ def create_demand():
     fill_rate = new_demand['fill_rate']
     revenue = new_demand['revenue']
 
-    conection = get_connection()
-    cursor = conection.cursor(cursor_factory=extras.RealDictCursor)
+    if user_email == '' or name == '' or status == '' or floor == '' or bid_type == '' or vast_url == '' or fill_rate == '' or revenue == '':
+        return {}
+    else:
+        conection = get_connection()
+        cursor = conection.cursor(cursor_factory=extras.RealDictCursor)
 
-    cursor.execute('INSERT INTO demands(user_email, name, status, floor, bid_type, vast_url, fill_rate, revenue) VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING *',
-                   (user_email, name, status, floor, bid_type, vast_url, fill_rate, revenue))
+        cursor.execute('INSERT INTO demands(user_email, name, status, floor, bid_type, vast_url, fill_rate, revenue) VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING *',
+                    (user_email, name, status, floor, bid_type, vast_url, fill_rate, revenue))
 
-    new_created_user = cursor.fetchone()
-    print(new_created_user)
+        new_created_user = cursor.fetchone()
+        print(new_created_user)
 
-    conection.commit()
-    cursor.close()
-    conection.close()
+        conection.commit()
+        cursor.close()
+        conection.close()
 
-    # return jsonify(new_created_user)
+        # return jsonify(new_created_user)
 
-    return name
+        return name
 
 @app.delete('/api/demands/<id>')
 def delete_users(id: int):

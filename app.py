@@ -141,7 +141,7 @@ def update_users(id: int):
 
 @app.get("/")
 def home():
-    return send_file('static/index.html')
+    return "server started"
 
 
 if __name__ == "__main__":
